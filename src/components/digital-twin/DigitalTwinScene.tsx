@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { facilities } from '../../data/mockData';
+import { facilities, type FacilityStatus } from '../../data/mockData';
 import { useSecurityStore } from '../../store/securityStore';
 
 export default function DigitalTwinScene() {
@@ -90,6 +90,24 @@ export default function DigitalTwinScene() {
     // scene.add(building);
 
     // 6. Facilities(기존 테스트용 빌딩 말고 실제 시설들 구현)
+
+    // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
+    // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
+    const getStatusColor = (status: FacilityStatus) => {
+      switch (status) {
+        case 'normal':
+          return 0x22c55e;
+
+        case 'warning':
+          return 0xfacc15;
+
+        case 'danger':
+          return 0xef4444;
+
+        default:
+          return 0xffffff;
+      }
+    };
     // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
       let geometry: THREE.BufferGeometry;
@@ -99,35 +117,35 @@ export default function DigitalTwinScene() {
         case 'building':
           geometry = new THREE.BoxGeometry(4, 2, 4);
           material = new THREE.MeshStandardMaterial({
-            color: 0x60a5fa,
+            color: getStatusColor(facility.status),
           });
           break;
 
         case 'cctv':
           geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 16);
           material = new THREE.MeshStandardMaterial({
-            color: 0xfacc15,
+            color: getStatusColor(facility.status),
           });
           break;
 
         case 'gate':
           geometry = new THREE.BoxGeometry(3, 1, 0.5);
           material = new THREE.MeshStandardMaterial({
-            color: 0x22c55e,
+            color: getStatusColor(facility.status),
           });
           break;
 
         case 'guard-post':
           geometry = new THREE.BoxGeometry(1.5, 1, 1.5);
           material = new THREE.MeshStandardMaterial({
-            color: 0xf97316,
+            color: getStatusColor(facility.status),
           });
           break;
 
         default:
           geometry = new THREE.BoxGeometry(1, 1, 1);
           material = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: getStatusColor(facility.status),
           });
       }
 
