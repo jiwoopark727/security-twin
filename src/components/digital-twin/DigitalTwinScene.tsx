@@ -90,6 +90,7 @@ export default function DigitalTwinScene() {
     // scene.add(building);
 
     // 6. Facilities(기존 테스트용 빌딩 말고 실제 시설들 구현)
+    // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
       let geometry: THREE.BufferGeometry;
       let material: THREE.Material;
@@ -145,6 +146,37 @@ export default function DigitalTwinScene() {
       scene.add(object);
     });
 
+    // Raycaster 설정
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const handleClick = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // 카메라와 마우스 좌표를 기반으로 ray 설정
+      raycaster.setFromCamera(mouse, camera);
+
+      // intersects 대상 배열 전달 (scene.children 등)
+      const intersects = raycaster.intersectObjects(scene.children);
+
+      // 가장 처음에 닿은 객체에 접근
+      if (intersects.length > 0) {
+        const selectedObject = intersects[0].object;
+
+        console.log('선택한 객체:', selectedObject);
+        console.log('Facility ID:', selectedObject.userData.facilityId);
+      }
+    };
+
+    //시설 객체 클릭 시 이벤트 등록
+    renderer.domElement.addEventListener('click', handleClick);
+
     // 7. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -188,6 +220,8 @@ export default function DigitalTwinScene() {
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
       }
+
+      renderer.domElement.removeEventListener('click', handleClick);
     };
   }, []);
 
