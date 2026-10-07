@@ -10,6 +10,8 @@ export default function MonitoringPanel() {
     (facility) => facility.id === selectedFacilityId,
   );
 
+  const facilityStatuses = useSecurityStore((state) => state.facilityStatuses);
+
   const statusLabel = {
     normal: '정상🟢',
     warning: '주의🟡',
@@ -45,7 +47,7 @@ export default function MonitoringPanel() {
 
         <div>
           <span className='text-gray-400'>
-            상태 : {statusLabel[selectedFacility.status]}
+            상태 : {statusLabel[facilityStatuses[selectedFacility.id]]}
           </span>
         </div>
 

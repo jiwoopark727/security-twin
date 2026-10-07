@@ -52,7 +52,7 @@ export const facilities: Facility[] = [
     id: 'gate-01',
     name: '정문',
     type: 'gate',
-    status: 'danger',
+    status: 'normal',
     position: {
       x: 0,
       y: 0.5,
@@ -63,7 +63,7 @@ export const facilities: Facility[] = [
     id: 'guard-post-01',
     name: '경비 초소',
     type: 'guard-post',
-    status: 'warning',
+    status: 'normal',
     position: {
       x: -5,
       y: 0.5,

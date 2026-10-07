@@ -7,6 +7,33 @@ import { useSecurityStore } from '../../store/securityStore';
 export default function DigitalTwinScene() {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Zustand의 시설 상태 변경 함수 가져옴
+  // const updateFacilityStatus = useSecurityStore(
+  //   (state) => state.updateFacilityStatus,
+  // );
+
+  const facilityStatuses = useSecurityStore((state) => state.facilityStatuses);
+
+  const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
+
+  // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
+  // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
+  const getStatusColor = (status: FacilityStatus) => {
+    switch (status) {
+      case 'normal':
+        return 0x22c55e;
+
+      case 'warning':
+        return 0xfacc15;
+
+      case 'danger':
+        return 0xef4444;
+
+      default:
+        return 0xffffff;
+    }
+  };
+
   // Three.js는 브라우저의 WebGL 환경을 필요로 하기 때문에
   // React가 컴포넌트를 렌더링하는 것과 Three.js의 3D 렌더링 초기화를 분리
   useEffect(() => {
@@ -90,24 +117,17 @@ export default function DigitalTwinScene() {
     // scene.add(building);
 
     // 6. Facilities(기존 테스트용 빌딩 말고 실제 시설들 구현)
+    // 시설 id로 three.js mesh객체를 맵핑해놓아서 찾는
+    // facilityObjects
+    // "building-01" → 본관 Mesh
+    // "cctv-01"     → 정문 CCTV Mesh
+    // "cctv-02"     → 북문 CCTV Mesh
+    // "gate-01"     → 정문 Mesh
+    // facilityObjects.get("cctv-02")
+    // 하면 북문 CCTV의 Three.js Mesh를 바로 찾을 수 있어.
 
-    // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
-    // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
-    const getStatusColor = (status: FacilityStatus) => {
-      switch (status) {
-        case 'normal':
-          return 0x22c55e;
+    // const facilityObjects = new Map<string, THREE.Mesh>();
 
-        case 'warning':
-          return 0xfacc15;
-
-        case 'danger':
-          return 0xef4444;
-
-        default:
-          return 0xffffff;
-      }
-    };
     // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
       let geometry: THREE.BufferGeometry;
@@ -161,15 +181,43 @@ export default function DigitalTwinScene() {
         facilityId: facility.id,
       };
 
+      facilityObjectsRef.current.set(facility.id, object);
+
       scene.add(object);
     });
+
+    //useSecurityStore의 시설 선택 함수
+    const selectFacility = useSecurityStore.getState().selectFacility;
+
+    const statusLabel = {
+      normal: '정상🟢',
+      warning: '주의🟡',
+      danger: '위험🔴',
+    };
+
+    // 시설 상태 변경 함수
+    const updateStatus = useSecurityStore.getState().updateFacilityStatus;
+
+    const statusList: FacilityStatus[] = ['normal', 'warning', 'danger'];
+
+    // 시설 상태 5초마다 랜덤 변경(시설도 랜덤 상태도 랜덤)
+    const interval = setInterval(() => {
+      const randomFacility =
+        facilities[Math.floor(Math.random() * facilities.length)];
+
+      const randomStatus =
+        statusList[Math.floor(Math.random() * statusList.length)];
+
+      updateStatus(randomFacility.id, randomStatus);
+
+      console.log(
+        `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
+      );
+    }, 10000);
 
     // Raycaster 설정
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-
-    //useSecurityStore의 시설 선택 함수
-    const selectFacility = useSecurityStore.getState().selectFacility;
 
     const handleClick = (event: MouseEvent) => {
       if (!containerRef.current) return;
@@ -248,8 +296,24 @@ export default function DigitalTwinScene() {
       }
 
       renderer.domElement.removeEventListener('click', handleClick);
+
+      clearInterval(interval);
     };
   }, []);
+
+  useEffect(() => {
+    Object.entries(facilityStatuses).forEach(([facilityId, status]) => {
+      const object = facilityObjectsRef.current.get(facilityId);
+
+      if (!object) return;
+
+      const material = object.material;
+
+      if (material instanceof THREE.MeshStandardMaterial) {
+        material.color.setHex(getStatusColor(status));
+      }
+    });
+  }, [facilityStatuses]);
 
   return (
     <div
