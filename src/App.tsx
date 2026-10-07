@@ -1,9 +1,13 @@
-// import { useState } from 'react';
-
 import DigitalTwinScene from './components/digital-twin/DigitalTwinScene';
+import MonitoringPanel from './components/digital-twin/MonitoringPanel';
 
 function App() {
-  return <DigitalTwinScene />;
+  return (
+    <main className='relative h-screen w-screen'>
+      <DigitalTwinScene />
+      <MonitoringPanel />
+    </main>
+  );
 }
 
 export default App;

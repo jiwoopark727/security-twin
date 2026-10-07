@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { facilities } from '../../data/mockData';
+import { useSecurityStore } from '../../store/securityStore';
 
 export default function DigitalTwinScene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,6 @@ export default function DigitalTwinScene() {
 
     // 3. Renderer(Scene과 Camera의 객체 데이터를 넘겨받아 카메라가 비추는 3D 공간을 2차원
     // 평면 이미지로 그려서 웹페이지 HTML <canvas> 요소에 출력하는 핵심 객체
-
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
     });
@@ -150,6 +150,9 @@ export default function DigitalTwinScene() {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    //useSecurityStore의 시설 선택 함수
+    const selectFacility = useSecurityStore.getState().selectFacility;
+
     const handleClick = (event: MouseEvent) => {
       if (!containerRef.current) return;
 
@@ -165,13 +168,19 @@ export default function DigitalTwinScene() {
       // intersects 대상 배열 전달 (scene.children 등)
       const intersects = raycaster.intersectObjects(scene.children);
 
-      // 가장 처음에 닿은 객체에 접근
-      if (intersects.length > 0) {
-        const selectedObject = intersects[0].object;
+      // 가장 처음에 닿은 객체에 접근(클릭 시 발동)
+      if (intersects.length === 0) return;
 
-        console.log('선택한 객체:', selectedObject);
-        console.log('Facility ID:', selectedObject.userData.facilityId);
-      }
+      const selectedObject = intersects[0].object;
+
+      // 기존 클릭 시 콘솔 이벤트
+      // console.log('선택한 객체:', selectedObject);
+      console.log('Facility ID:', selectedObject.userData.facilityId);
+
+      // 이제는 클릭시 store(Zustand)에 ex)selectedFacilityId = "cctv-01" id가 대입됨
+      const facilityId = selectedObject.userData.facilityId;
+      if (!facilityId) return;
+      selectFacility(facilityId);
     };
 
     //시설 객체 클릭 시 이벤트 등록
@@ -179,7 +188,6 @@ export default function DigitalTwinScene() {
 
     // 7. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
-
     controls.enableDamping = true;
 
     // 8. Animation
