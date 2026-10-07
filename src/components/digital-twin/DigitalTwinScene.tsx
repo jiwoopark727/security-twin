@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { facilities } from '../../data/mockData';
 
 export default function DigitalTwinScene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +58,7 @@ export default function DigitalTwinScene() {
 
     // 5. Ground(바닥)
     // 바닥 가로세로
-    const groundGeometry = new THREE.PlaneGeometry(25, 25);
+    const groundGeometry = new THREE.PlaneGeometry(20, 20);
 
     //바닥 재질, 모양, 색상 이런거
     const groundMaterial = new THREE.MeshStandardMaterial({
@@ -75,18 +76,74 @@ export default function DigitalTwinScene() {
 
     // 6. Building(건물 이게 본론!)
     // 가로 세로 깊이
-    const buildingGeometry = new THREE.BoxGeometry(4, 2, 4);
+    // const buildingGeometry = new THREE.BoxGeometry(4, 2, 4);
 
-    const buildingMaterial = new THREE.MeshStandardMaterial({
-      color: 0x60a5fa,
+    // const buildingMaterial = new THREE.MeshStandardMaterial({
+    //   color: 0x60a5fa,
+    // });
+
+    // const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+
+    // // 기본적으로 건물 중심은 y=0 이니까 높이가 2면 위아래로 1씩 가기 때문에
+    // // y축으로 1 올려줘야 건물의 밑면이 온전히 바닥에서 시작함
+    // building.position.y = 1;
+    // scene.add(building);
+
+    // 6. Facilities(기존 테스트용 빌딩 말고 실제 시설들 구현)
+    facilities.forEach((facility) => {
+      let geometry: THREE.BufferGeometry;
+      let material: THREE.Material;
+
+      switch (facility.type) {
+        case 'building':
+          geometry = new THREE.BoxGeometry(4, 2, 4);
+          material = new THREE.MeshStandardMaterial({
+            color: 0x60a5fa,
+          });
+          break;
+
+        case 'cctv':
+          geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 16);
+          material = new THREE.MeshStandardMaterial({
+            color: 0xfacc15,
+          });
+          break;
+
+        case 'gate':
+          geometry = new THREE.BoxGeometry(3, 1, 0.5);
+          material = new THREE.MeshStandardMaterial({
+            color: 0x22c55e,
+          });
+          break;
+
+        case 'guard-post':
+          geometry = new THREE.BoxGeometry(1.5, 1, 1.5);
+          material = new THREE.MeshStandardMaterial({
+            color: 0xf97316,
+          });
+          break;
+
+        default:
+          geometry = new THREE.BoxGeometry(1, 1, 1);
+          material = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+          });
+      }
+
+      const object = new THREE.Mesh(geometry, material);
+
+      object.position.set(
+        facility.position.x,
+        facility.position.y,
+        facility.position.z,
+      );
+
+      object.userData = {
+        facilityId: facility.id,
+      };
+
+      scene.add(object);
     });
-
-    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-
-    // 기본적으로 건물 중심은 y=0 이니까 높이가 2면 위아래로 1씩 가기 때문에
-    // y축으로 1 올려줘야 건물이 온전히 바닥에서 시작함
-    building.position.y = 1;
-    scene.add(building);
 
     // 7. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
