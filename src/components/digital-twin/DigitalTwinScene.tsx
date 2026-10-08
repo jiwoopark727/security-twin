@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { facilities, type FacilityStatus } from '../../data/mockData';
+import {
+  facilities,
+  securityAgents,
+  type FacilityStatus,
+  type SecurityAgent,
+} from '../../data/mockData';
 import { useSecurityStore } from '../../store/securityStore';
 
 export default function DigitalTwinScene() {
@@ -14,7 +19,12 @@ export default function DigitalTwinScene() {
 
   const facilityStatuses = useSecurityStore((state) => state.facilityStatuses);
 
+  // useRef를 쓰는 이유는 리렌더링을 유발하지 않으면서 데이터와
+  // 객체 인스턴슬를 유지하고 직접 조작하기 위함 useState면 계속 리렌더링 되니까
+  // 시설객체저장
   const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
+  // 경비객체저장
+  const agentObjectsRef = useRef(new Map<string, THREE.Mesh>());
 
   // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
   // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
@@ -32,6 +42,35 @@ export default function DigitalTwinScene() {
       default:
         return 0xffffff;
     }
+  };
+
+  const createAgentMesh = (agentType: SecurityAgent['type']) => {
+    let geometry: THREE.BufferGeometry;
+
+    switch (agentType) {
+      case 'guard':
+        geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 5);
+        break;
+
+      case 'patrol-robot':
+        geometry = new THREE.BoxGeometry(0.8, 0.4, 0.8);
+        break;
+
+      case 'drone':
+        geometry = new THREE.SphereGeometry(0.4, 16, 16);
+        break;
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      color:
+        agentType === 'guard'
+          ? 0x3b82f6
+          : agentType === 'patrol-robot'
+            ? 0x8b5cf6
+            : 0x06b6d4,
+    });
+
+    return new THREE.Mesh(geometry, material);
   };
 
   // Three.js는 브라우저의 WebGL 환경을 필요로 하기 때문에
@@ -53,7 +92,7 @@ export default function DigitalTwinScene() {
     );
 
     // 카메라가 바라보는 위치 설정
-    camera.position.set(5, 5, 8);
+    camera.position.set(3, 6, 8);
 
     // 3. Renderer(Scene과 Camera의 객체 데이터를 넘겨받아 카메라가 비추는 3D 공간을 2차원
     // 평면 이미지로 그려서 웹페이지 HTML <canvas> 요소에 출력하는 핵심 객체
@@ -85,7 +124,7 @@ export default function DigitalTwinScene() {
 
     // 5. Ground(바닥)
     // 바닥 가로세로
-    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+    const groundGeometry = new THREE.PlaneGeometry(15, 15);
 
     //바닥 재질, 모양, 색상 이런거
     const groundMaterial = new THREE.MeshStandardMaterial({
@@ -142,7 +181,7 @@ export default function DigitalTwinScene() {
           break;
 
         case 'cctv':
-          geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 16);
+          geometry = new THREE.CylinderGeometry(0.25, 0.25, 0.6, 16);
           material = new THREE.MeshStandardMaterial({
             color: getStatusColor(facility.status),
           });
@@ -184,6 +223,19 @@ export default function DigitalTwinScene() {
       facilityObjectsRef.current.set(facility.id, object);
 
       scene.add(object);
+    });
+
+    // 경비 객체 씬에 추가
+    securityAgents.forEach((agent) => {
+      const mesh = createAgentMesh(agent.type);
+
+      mesh.position.set(agent.position.x, agent.position.y, agent.position.z);
+
+      mesh.userData.agentId = agent.id;
+
+      scene.add(mesh);
+
+      agentObjectsRef.current.set(agent.id, mesh);
     });
 
     //useSecurityStore의 시설 선택 함수

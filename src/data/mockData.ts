@@ -49,9 +49,9 @@ export const facilities: Facility[] = [
     type: 'cctv',
     status: 'normal',
     position: {
-      x: 3,
-      y: 1,
-      z: 3,
+      x: 2.3,
+      y: 1.6,
+      z: 2.3,
     },
   },
   {
@@ -60,9 +60,9 @@ export const facilities: Facility[] = [
     type: 'cctv',
     status: 'normal',
     position: {
-      x: -3,
-      y: 1,
-      z: -3,
+      x: -2.3,
+      y: 1.6,
+      z: -2.3,
     },
   },
   {
@@ -96,9 +96,9 @@ export const securityAgents: SecurityAgent[] = [
     type: 'guard',
     status: '근무중🟢',
     position: {
-      x: -5,
-      y: 0.6,
-      z: 4.5,
+      x: -4,
+      y: 0.5,
+      z: 4.1,
     },
   },
   {
@@ -107,9 +107,9 @@ export const securityAgents: SecurityAgent[] = [
     type: 'patrol-robot',
     status: '순찰중🔵',
     position: {
-      x: -2,
-      y: 0.3,
-      z: 2,
+      x: 3.5,
+      y: 0.2,
+      z: -3.5,
     },
   },
   {
