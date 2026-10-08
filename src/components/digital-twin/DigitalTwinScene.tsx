@@ -18,6 +18,17 @@ export default function DigitalTwinScene() {
   // );
 
   const facilityStatuses = useSecurityStore((state) => state.facilityStatuses);
+  const updateAgentPosition = useSecurityStore(
+    (state) => state.updateAgentPosition,
+  );
+
+  // 로봇 순찰 경로 지정(본관 주위 한바퀴로)
+  const patrolPath = [
+    { x: 3.5, y: 0.2, z: -3.5 },
+    { x: 3.5, y: 0.2, z: 3.5 },
+    { x: -3.5, y: 0.2, z: 3.5 },
+    { x: -3.5, y: 0.2, z: -3.5 },
+  ];
 
   // useRef를 쓰는 이유는 리렌더링을 유발하지 않으면서 데이터와
   // 객체 인스턴슬를 유지하고 직접 조작하기 위함 useState면 계속 리렌더링 되니까
@@ -139,33 +150,6 @@ export default function DigitalTwinScene() {
     // 그래서 x축을 기준으로 -90도 회전시켜서 바닥처럼 눕히는거
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
-
-    // 6. Building(건물 이게 본론!)
-    // 가로 세로 깊이
-    // const buildingGeometry = new THREE.BoxGeometry(4, 2, 4);
-
-    // const buildingMaterial = new THREE.MeshStandardMaterial({
-    //   color: 0x60a5fa,
-    // });
-
-    // const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-
-    // // 기본적으로 건물 중심은 y=0 이니까 높이가 2면 위아래로 1씩 가기 때문에
-    // // y축으로 1 올려줘야 건물의 밑면이 온전히 바닥에서 시작함
-    // building.position.y = 1;
-    // scene.add(building);
-
-    // 6. Facilities(기존 테스트용 빌딩 말고 실제 시설들 구현)
-    // 시설 id로 three.js mesh객체를 맵핑해놓아서 찾는
-    // facilityObjects
-    // "building-01" → 본관 Mesh
-    // "cctv-01"     → 정문 CCTV Mesh
-    // "cctv-02"     → 북문 CCTV Mesh
-    // "gate-01"     → 정문 Mesh
-    // facilityObjects.get("cctv-02")
-    // 하면 북문 CCTV의 Three.js Mesh를 바로 찾을 수 있어.
-
-    // const facilityObjects = new Map<string, THREE.Mesh>();
 
     // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
@@ -353,6 +337,7 @@ export default function DigitalTwinScene() {
     };
   }, []);
 
+  // 상태가 변경될때마다 시설 객체 색상 변경해주는
   useEffect(() => {
     Object.entries(facilityStatuses).forEach(([facilityId, status]) => {
       const object = facilityObjectsRef.current.get(facilityId);
@@ -366,6 +351,55 @@ export default function DigitalTwinScene() {
       }
     });
   }, [facilityStatuses]);
+
+  useEffect(() => {
+    const robot = agentObjectsRef.current.get('robot-01');
+
+    if (!robot) return;
+
+    let currentTargetIndex = 1;
+
+    const speed = 0.02;
+
+    const animatePatrol = () => {
+      const target = patrolPath[currentTargetIndex];
+
+      const dx = target.x - robot.position.x;
+      const dz = target.z - robot.position.z;
+
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < 0.05) {
+        currentTargetIndex = (currentTargetIndex + 1) % patrolPath.length;
+
+        return;
+      }
+
+      robot.position.x += (dx / distance) * speed;
+      robot.position.z += (dz / distance) * speed;
+
+      updateAgentPosition('robot-01', {
+        x: robot.position.x,
+        y: robot.position.y,
+        z: robot.position.z,
+      });
+    };
+
+    // 사실 로봇 이동도 setInterval 보다는 이 애니메이션 루프 안에서 처리하는게 three.js 스럽다
+    // 즉 이런 구조
+    // requestAnimationFrame
+    //         ↓
+    // 로봇 위치 계산
+    //         ↓
+    // Scene 렌더링
+    // 하지만 지금은 우리가 개념을 배우는 단계니까 일단 setInterval로 구현해보고,
+    // 정상적으로 움직이는 걸 확인한 다음 requestAnimationFrame 기반으로 리팩토링하자.
+    const interval = setInterval(animatePatrol, 16);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [updateAgentPosition]);
 
   return (
     <div
