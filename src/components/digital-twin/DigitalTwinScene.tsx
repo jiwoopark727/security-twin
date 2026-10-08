@@ -225,31 +225,32 @@ export default function DigitalTwinScene() {
     //useSecurityStore의 시설 선택 함수
     const selectFacility = useSecurityStore.getState().selectFacility;
 
-    const statusLabel = {
-      normal: '정상🟢',
-      warning: '주의🟡',
-      danger: '위험🔴',
-    };
+    // const statusLabel = {
+    //   normal: '정상🟢',
+    //   warning: '주의🟡',
+    //   danger: '위험🔴',
+    // };
 
-    // 시설 상태 변경 함수
-    const updateStatus = useSecurityStore.getState().updateFacilityStatus;
+    // 이거 다시 주석 지울 때 밑에 clean(Interval) 도 잊지말고 주석 빼줘야함!!
+    // // 시설 상태 변경 함수
+    // const updateStatus = useSecurityStore.getState().updateFacilityStatus;
 
-    const statusList: FacilityStatus[] = ['normal', 'warning', 'danger'];
+    // const statusList: FacilityStatus[] = ['normal', 'warning', 'danger'];
 
-    // 시설 상태 5초마다 랜덤 변경(시설도 랜덤 상태도 랜덤)
-    const interval = setInterval(() => {
-      const randomFacility =
-        facilities[Math.floor(Math.random() * facilities.length)];
+    // // 시설 상태 10초마다 랜덤 변경(시설도 랜덤 상태도 랜덤)
+    // const interval = setInterval(() => {
+    //   const randomFacility =
+    //     facilities[Math.floor(Math.random() * facilities.length)];
 
-      const randomStatus =
-        statusList[Math.floor(Math.random() * statusList.length)];
+    //   const randomStatus =
+    //     statusList[Math.floor(Math.random() * statusList.length)];
 
-      updateStatus(randomFacility.id, randomStatus);
+    //   updateStatus(randomFacility.id, randomStatus);
 
-      console.log(
-        `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
-      );
-    }, 10000);
+    //   console.log(
+    //     `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
+    //   );
+    // }, 10000);
 
     // Raycaster 설정
     const raycaster = new THREE.Raycaster();
@@ -333,7 +334,7 @@ export default function DigitalTwinScene() {
 
       renderer.domElement.removeEventListener('click', handleClick);
 
-      clearInterval(interval);
+      // clearInterval(interval);
     };
   }, []);
 

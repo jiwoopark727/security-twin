@@ -18,6 +18,7 @@ import {
 
 interface SecurityState {
   selectedFacilityId: string | null;
+  selectedAgentId: string | null;
 
   facilityStatuses: Record<string, FacilityStatus>;
 
@@ -33,9 +34,12 @@ interface SecurityState {
   agentStatuses: Record<string, AgentStatus>;
 
   selectFacility: (facilityId: string) => void;
-  clearSelection: () => void;
+  clearFacilitySelection: () => void;
 
   updateFacilityStatus: (facilityId: string, status: FacilityStatus) => void;
+
+  selectAgent: (agentId: string) => void;
+  clearAgentSelection: () => void;
 
   updateAgentPosition: (
     agentId: string,
@@ -71,6 +75,7 @@ const initialAgentStatuses = Object.fromEntries(
 
 export const useSecurityStore = create<SecurityState>((set) => ({
   selectedFacilityId: null,
+  selectedAgentId: null,
 
   facilityStatuses: initialFacilityStatuses,
 
@@ -81,10 +86,13 @@ export const useSecurityStore = create<SecurityState>((set) => ({
   selectFacility: (facilityId) => {
     set({
       selectedFacilityId: facilityId,
+      // 시설을 클릭했는데 기존에 선택되어 있던 로봇도 선택된 상태면 안 되니
+      // 그래서 서로 선택을 해제
+      selectedAgentId: null,
     });
   },
 
-  clearSelection: () => {
+  clearFacilitySelection: () => {
     set({
       selectedFacilityId: null,
     });
@@ -116,4 +124,17 @@ export const useSecurityStore = create<SecurityState>((set) => ({
       },
     }));
   },
+
+  selectAgent: (agentId) =>
+    set({
+      selectedAgentId: agentId,
+      // 시설을 클릭했는데 기존에 선택되어 있던 로봇도 선택된 상태면 안 되니
+      // 그래서 서로 선택을 해제
+      selectedFacilityId: null,
+    }),
+
+  clearAgentSelection: () =>
+    set({
+      selectedAgentId: null,
+    }),
 }));
