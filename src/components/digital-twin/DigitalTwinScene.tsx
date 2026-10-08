@@ -225,6 +225,8 @@ export default function DigitalTwinScene() {
     //useSecurityStore의 시설 선택 함수
     const selectFacility = useSecurityStore.getState().selectFacility;
 
+    const selectAgent = useSecurityStore.getState().selectAgent;
+
     // const statusLabel = {
     //   normal: '정상🟢',
     //   warning: '주의🟡',
@@ -269,6 +271,7 @@ export default function DigitalTwinScene() {
       raycaster.setFromCamera(mouse, camera);
 
       // intersects 대상 배열 전달 (scene.children 등)
+      // 한마디로 클릭 이벤트인거지 three.js 의~
       const intersects = raycaster.intersectObjects(scene.children);
 
       // 가장 처음에 닿은 객체에 접근(클릭 시 발동)
@@ -276,14 +279,18 @@ export default function DigitalTwinScene() {
 
       const selectedObject = intersects[0].object;
 
-      // 기존 클릭 시 콘솔 이벤트
-      // console.log('선택한 객체:', selectedObject);
-      console.log('Facility ID:', selectedObject.userData.facilityId);
+      console.log(selectedObject.userData);
 
-      // 이제는 클릭시 store(Zustand)에 ex)selectedFacilityId = "cctv-01" id가 대입됨
-      const facilityId = selectedObject.userData.facilityId;
-      if (!facilityId) return;
-      selectFacility(facilityId);
+      // 경비 객체 클릭
+      if (selectedObject.userData.agentId) {
+        selectAgent(selectedObject.userData.agentId);
+        return;
+      }
+
+      // 시설 클릭
+      if (selectedObject.userData.facilityId) {
+        selectFacility(selectedObject.userData.facilityId);
+      }
     };
 
     //시설 객체 클릭 시 이벤트 등록
