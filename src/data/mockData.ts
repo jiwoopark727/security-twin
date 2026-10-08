@@ -4,6 +4,8 @@ export type AgentType = 'guard' | 'patrol-robot' | 'drone';
 // 이것도 사실 위에 처럼 영어 text로만 하고 클라이언트 쪽에서 맵핑해서 뱃지ui 형태로 만드는게 좋긴함
 // 하지만 일단 이렇게 그냥 ㄱㄱ
 export type AgentStatus = '근무중🟢' | '순찰중🔵' | '대기🟡' | '이상🔴';
+export type SecurityEventType = 'intrusion' | 'fire' | 'equipment';
+export type SecurityEventStatus = '발생' | '처리중' | '해결';
 
 // 시설물 객체 데이터
 export interface Facility {
@@ -29,6 +31,18 @@ export interface SecurityAgent {
     y: number;
     z: number;
   };
+}
+
+export interface SecurityEvent {
+  id: string;
+  type: SecurityEventType;
+  status: SecurityEventStatus;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  message: string;
 }
 
 export const facilities: Facility[] = [
@@ -97,8 +111,8 @@ export const securityAgents: SecurityAgent[] = [
     status: '근무중🟢',
     position: {
       x: -4,
-      y: 0.5,
-      z: 4.1,
+      y: 0.3,
+      z: 5,
     },
   },
   {
@@ -107,9 +121,9 @@ export const securityAgents: SecurityAgent[] = [
     type: 'patrol-robot',
     status: '순찰중🔵',
     position: {
-      x: 3.5,
+      x: 3,
       y: 0.2,
-      z: -3.5,
+      z: -3,
     },
   },
   {
@@ -122,5 +136,33 @@ export const securityAgents: SecurityAgent[] = [
       y: 5,
       z: -2,
     },
+  },
+];
+
+// 테스트용 침입 이벤트 하나 설정함
+// ------------ 지금까지는 -------------
+// 시설 → 상태
+// 로봇 → 상태 / 위치
+// ------------   이제는   -------------
+// 현실에서 발생한 사건
+//         ↓
+// Security Event
+//         ↓
+// 시설/센서 상태 변화
+//         ↓
+// 경비 객체의 대응
+// 이라는 흐름을 만들 수 있음
+// 이게 디지털 트윈에서 단순히 3D 모델을 보여주는 것과 모니터링 시스템의 차이
+export const securityEvents: SecurityEvent[] = [
+  {
+    id: 'event-01',
+    type: 'intrusion',
+    status: '발생',
+    position: {
+      x: 0,
+      y: 0.3,
+      z: 5,
+    },
+    message: '정문 인근에서 미인가 객체가 감지되었습니다.',
   },
 ];
