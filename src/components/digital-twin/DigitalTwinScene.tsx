@@ -124,7 +124,7 @@ export default function DigitalTwinScene() {
 
     // 5. Ground(바닥)
     // 바닥 가로세로
-    const groundGeometry = new THREE.PlaneGeometry(15, 15);
+    const groundGeometry = new THREE.PlaneGeometry(14, 14);
 
     //바닥 재질, 모양, 색상 이런거
     const groundMaterial = new THREE.MeshStandardMaterial({
