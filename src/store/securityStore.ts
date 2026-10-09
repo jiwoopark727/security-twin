@@ -151,9 +151,9 @@ export const useSecurityStore = create<SecurityState>((set) => ({
       type: 'intrusion',
       status: '발생',
       position: {
-        x: 3,
+        x: 0,
         y: 0.3,
-        z: 2,
+        z: 5,
       },
       message: '정문 인근에서 미인가 객체가 감지되었습니다.',
       createdAt: new Date().toLocaleTimeString('ko-KR'),
@@ -182,6 +182,16 @@ export const useSecurityStore = create<SecurityState>((set) => ({
             status: '해결',
           }
         : null,
+
+      facilityStatuses: {
+        ...state.facilityStatuses,
+        'cctv-01': 'normal',
+      },
+
+      agentStatuses: {
+        ...state.agentStatuses,
+        'robot-01': '순찰중🔵',
+      },
     }));
   },
 }));

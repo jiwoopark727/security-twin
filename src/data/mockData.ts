@@ -159,6 +159,20 @@ export const securityAgents: SecurityAgent[] = [
 // 경비 객체의 대응
 // 이라는 흐름을 만들 수 있음
 // 이게 디지털 트윈에서 단순히 3D 모델을 보여주는 것과 모니터링 시스템의 차이
+
+const now: Date = new Date();
+
+const year: number = now.getFullYear(); // 연도 (예: 2026)
+const month: string = String(now.getMonth() + 1).padStart(2, '0'); // 월 (0~11로 반환되므로 +1 필수)
+const date: string = String(now.getDate()).padStart(2, '0'); // 일
+
+const hours: string = String(now.getHours()).padStart(2, '0'); // 시
+const minutes: string = String(now.getMinutes()).padStart(2, '0'); // 분
+const seconds: string = String(now.getSeconds()).padStart(2, '0'); // 초
+
+// YYYY-MM-DD HH:mm:ss 포맷팅
+const formattedDate: string = `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
+
 export const securityEvents: SecurityEvent[] = [
   {
     id: 'event-01',
@@ -170,5 +184,6 @@ export const securityEvents: SecurityEvent[] = [
       z: 5,
     },
     message: '정문 인근에서 미인가 객체가 감지되었습니다.',
+    createdAt: formattedDate,
   },
 ];
