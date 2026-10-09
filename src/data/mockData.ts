@@ -3,7 +3,12 @@ export type FacilityType = 'building' | 'cctv' | 'gate' | 'guard-post';
 export type AgentType = 'guard' | 'patrol-robot' | 'drone';
 // 이것도 사실 위에 처럼 영어 text로만 하고 클라이언트 쪽에서 맵핑해서 뱃지ui 형태로 만드는게 좋긴함
 // 하지만 일단 이렇게 그냥 ㄱㄱ
-export type AgentStatus = '근무중🟢' | '순찰중🔵' | '대기🟡' | '이상🔴';
+export type AgentStatus =
+  | '근무중🟢'
+  | '순찰중🔵'
+  | '대기🟡'
+  | '이상🔴'
+  | '대응중🟠';
 export type SecurityEventType = 'intrusion' | 'fire' | 'equipment';
 export type SecurityEventStatus = '발생' | '처리중' | '해결';
 
@@ -43,6 +48,7 @@ export interface SecurityEvent {
     z: number;
   };
   message: string;
+  createdAt: string;
 }
 
 export const facilities: Facility[] = [

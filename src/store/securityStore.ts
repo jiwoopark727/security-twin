@@ -4,6 +4,7 @@ import {
   securityAgents,
   type FacilityStatus,
   type AgentStatus,
+  type SecurityEvent,
 } from '../data/mockData';
 
 // 아래 데이터 구조 도식화
@@ -19,6 +20,11 @@ import {
 interface SecurityState {
   selectedFacilityId: string | null;
   selectedAgentId: string | null;
+  // activeSecurityEvent는 현재 처리 중인 이벤트를 보관, 이벤트 없으면 null
+  activeSecurityEvent: SecurityEvent | null;
+
+  triggerIntrusion: () => void;
+  resolveSecurityEvent: () => void;
 
   facilityStatuses: Record<string, FacilityStatus>;
 
@@ -76,6 +82,7 @@ const initialAgentStatuses = Object.fromEntries(
 export const useSecurityStore = create<SecurityState>((set) => ({
   selectedFacilityId: null,
   selectedAgentId: null,
+  activeSecurityEvent: null,
 
   facilityStatuses: initialFacilityStatuses,
 
@@ -137,4 +144,44 @@ export const useSecurityStore = create<SecurityState>((set) => ({
     set({
       selectedAgentId: null,
     }),
+
+  triggerIntrusion: () => {
+    const event: SecurityEvent = {
+      id: `event-${Date.now()}`,
+      type: 'intrusion',
+      status: '발생',
+      position: {
+        x: 3,
+        y: 0.3,
+        z: 2,
+      },
+      message: '정문 인근에서 미인가 객체가 감지되었습니다.',
+      createdAt: new Date().toLocaleTimeString('ko-KR'),
+    };
+
+    set((state) => ({
+      activeSecurityEvent: event,
+
+      facilityStatuses: {
+        ...state.facilityStatuses,
+        'cctv-01': 'danger',
+      },
+
+      agentStatuses: {
+        ...state.agentStatuses,
+        'robot-01': '대응중🟠',
+      },
+    }));
+  },
+
+  resolveSecurityEvent: () => {
+    set((state) => ({
+      activeSecurityEvent: state.activeSecurityEvent
+        ? {
+            ...state.activeSecurityEvent,
+            status: '해결',
+          }
+        : null,
+    }));
+  },
 }));
