@@ -1,4 +1,5 @@
 import { useSecurityStore } from '../../store/securityStore';
+import { useStrangerStore } from '../../store/strangerStore';
 
 // SecurityEventPanel은 이벤트 상태를 직접 보관하지 x
 // Zustand에서 상태를 읽고 액션을 호출하는 역할만 함
@@ -12,6 +13,9 @@ const SecurityEventPanel = () => {
   const resolveSecurityEvent = useSecurityStore(
     (state) => state.resolveSecurityEvent,
   );
+
+  const strangerOn = useStrangerStore((state) => state.strangerOn);
+  const strangerOff = useStrangerStore((state) => state.strangerOff);
 
   return (
     <div className='absolute left-4 top-4 z-10 w-80 rounded-xl border border-white/10 bg-gray-950/90 p-5 text-white shadow-xl backdrop-blur'>
@@ -30,7 +34,10 @@ const SecurityEventPanel = () => {
           </p>
 
           <button
-            onClick={triggerIntrusion}
+            onClick={() => {
+              triggerIntrusion();
+              strangerOn();
+            }}
             className='w-full rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold transition hover:bg-red-500'
           >
             🚨 침입 이벤트 발생
@@ -69,7 +76,10 @@ const SecurityEventPanel = () => {
           </div>
 
           <button
-            onClick={resolveSecurityEvent}
+            onClick={() => {
+              resolveSecurityEvent();
+              strangerOff();
+            }}
             className='w-full rounded-lg bg-white/10 px-4 py-3 text-sm font-semibold transition hover:bg-white/20'
           >
             이벤트 해결 처리

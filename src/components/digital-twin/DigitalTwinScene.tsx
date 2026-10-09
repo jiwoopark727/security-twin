@@ -10,6 +10,7 @@ import {
   type SecurityAgent,
 } from '../../data/mockData';
 import { useSecurityStore } from '../../store/securityStore';
+import { useStrangerStore } from '../../store/strangerStore';
 
 export default function DigitalTwinScene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +24,8 @@ export default function DigitalTwinScene() {
   const updateAgentPosition = useSecurityStore(
     (state) => state.updateAgentPosition,
   );
+
+  const strangerOnOff = useStrangerStore((state) => state.strangerOnOff);
 
   // 로봇 순찰 경로 지정(본관 주위 한바퀴로)
   const patrolPath = [
@@ -38,6 +41,7 @@ export default function DigitalTwinScene() {
   const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
   // 경비객체저장
   const agentObjectsRef = useRef(new Map<string, THREE.Mesh>());
+  const strangerObjectsRef = useRef<Map<string, THREE.Mesh>>(new Map());
 
   // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
   // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
@@ -111,6 +115,8 @@ export default function DigitalTwinScene() {
     return new THREE.Mesh(geometry, material);
   };
 
+  const sceneRef = useRef<THREE.Scene | null>(null);
+
   // Three.js는 브라우저의 WebGL 환경을 필요로 하기 때문에
   // React가 컴포넌트를 렌더링하는 것과 Three.js의 3D 렌더링 초기화를 분리
   useEffect(() => {
@@ -118,6 +124,8 @@ export default function DigitalTwinScene() {
 
     // 1. Scene(3D 세계 자체, 앞으로 만들 건물 경비원 등등이 다 이 안에 들어감)
     const scene = new THREE.Scene();
+    // 침입자 객체 on/off 할때 사용하게
+    sceneRef.current = scene;
     scene.background = new THREE.Color(0x111827);
 
     // 2. Camera(시점 역할)
@@ -249,22 +257,22 @@ export default function DigitalTwinScene() {
       agentObjectsRef.current.set(agent.id, mesh);
     });
 
-    // 침입자 객체 씬에 추가
-    strangers.forEach((stranger) => {
-      const mesh = createStrangerMesh(stranger.type);
+    // // 침입자 객체 씬에 추가
+    // strangers.forEach((stranger) => {
+    //   const mesh = createStrangerMesh(stranger.type);
 
-      mesh.position.set(
-        stranger.position.x,
-        stranger.position.y,
-        stranger.position.z,
-      );
+    //   mesh.position.set(
+    //     stranger.position.x,
+    //     stranger.position.y,
+    //     stranger.position.z,
+    //   );
 
-      mesh.userData.stranger = stranger.id;
+    //   mesh.userData.stranger = stranger.id;
 
-      scene.add(mesh);
+    //   scene.add(mesh);
 
-      agentObjectsRef.current.set(stranger.id, mesh);
-    });
+    //   agentObjectsRef.current.set(stranger.id, mesh);
+    // });
 
     //useSecurityStore의 시설 선택 함수
     const selectFacility = useSecurityStore.getState().selectFacility;
@@ -452,6 +460,42 @@ export default function DigitalTwinScene() {
       clearInterval(interval);
     };
   }, [updateAgentPosition]);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+
+    if (!scene) return;
+
+    if (strangerOnOff) {
+      // 침입자 객체 추가
+      strangers.forEach((stranger) => {
+        if (strangerObjectsRef.current.has(stranger.id)) {
+          return;
+        }
+
+        const mesh = createStrangerMesh(stranger.type);
+
+        mesh.position.set(
+          stranger.position.x,
+          stranger.position.y,
+          stranger.position.z,
+        );
+
+        mesh.userData.stranger = stranger.id;
+
+        scene.add(mesh);
+
+        strangerObjectsRef.current.set(stranger.id, mesh);
+      });
+    } else {
+      // 침입자 객체 제거
+      strangerObjectsRef.current.forEach((mesh) => {
+        scene.remove(mesh);
+      });
+
+      strangerObjectsRef.current.clear();
+    }
+  }, [strangerOnOff, strangers]);
 
   return (
     <div
