@@ -9,7 +9,8 @@ export type AgentStatus =
   | '순찰중🔵'
   | '대기🟡'
   | '이상🔴'
-  | '대응중🟠';
+  | '대응중🟠'
+  | '출동중🟣';
 export type SecurityEventType = 'intrusion' | 'fire' | 'equipment';
 export type SecurityEventStatus = '발생' | '처리중' | '해결';
 

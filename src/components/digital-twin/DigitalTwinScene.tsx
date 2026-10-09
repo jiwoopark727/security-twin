@@ -21,6 +21,11 @@ export default function DigitalTwinScene() {
   // );
 
   const facilityStatuses = useSecurityStore((state) => state.facilityStatuses);
+
+  const activeSecurityEvent = useSecurityStore(
+    (state) => state.activeSecurityEvent,
+  );
+
   const updateAgentPosition = useSecurityStore(
     (state) => state.updateAgentPosition,
   );
@@ -257,33 +262,10 @@ export default function DigitalTwinScene() {
       agentObjectsRef.current.set(agent.id, mesh);
     });
 
-    // // 침입자 객체 씬에 추가
-    // strangers.forEach((stranger) => {
-    //   const mesh = createStrangerMesh(stranger.type);
-
-    //   mesh.position.set(
-    //     stranger.position.x,
-    //     stranger.position.y,
-    //     stranger.position.z,
-    //   );
-
-    //   mesh.userData.stranger = stranger.id;
-
-    //   scene.add(mesh);
-
-    //   agentObjectsRef.current.set(stranger.id, mesh);
-    // });
-
     //useSecurityStore의 시설 선택 함수
     const selectFacility = useSecurityStore.getState().selectFacility;
 
     const selectAgent = useSecurityStore.getState().selectAgent;
-
-    // const statusLabel = {
-    //   normal: '정상🟢',
-    //   warning: '주의🟡',
-    //   danger: '위험🔴',
-    // };
 
     // 이거 다시 주석 지울 때 밑에 clean(Interval) 도 잊지말고 주석 빼줘야함!!
     // // 시설 상태 변경 함수
@@ -412,6 +394,28 @@ export default function DigitalTwinScene() {
     });
   }, [facilityStatuses]);
 
+  // 로봇 순찰 애니메이션 로직
+  // 사실 로봇 이동도 setInterval 보다는 이 애니메이션 루프 안에서 처리하는게 three.js 스럽다
+  // 즉 이런 구조
+  // requestAnimationFrame
+  //         ↓
+  // 로봇 위치 계산
+  //         ↓
+  // Scene 렌더링
+  // 하지만 지금은 우리가 개념을 배우는 단계니까 일단 setInterval로 구현해보고,
+  // 정상적으로 움직이는 걸 확인한 다음 requestAnimationFrame 기반으로 리팩토링하자.
+  // 최종 ver. 지금 사각형 경로로 순찰을 돌다가 침입자 발생 시 해당 지점으로 출동
+  // 근데 해당 지점으로 일직선 이동하다 보니 건물을 뚫고 가는 문제 발생
+
+  // const resolveSecurityEvent = useSecurityStore(
+  //   (state) => state.resolveSecurityEvent,
+  // );
+  const respondSecurityEvent = useSecurityStore(
+    (state) => state.respondSecurityEvent,
+  );
+
+  const hasRespondedRef = useRef(false);
+
   useEffect(() => {
     const robot = agentObjectsRef.current.get('robot-01');
 
@@ -420,24 +424,46 @@ export default function DigitalTwinScene() {
     let currentTargetIndex = 1;
 
     const speed = 0.02;
+    const arrivalDistance = 0.05;
 
-    const animatePatrol = () => {
-      const target = patrolPath[currentTargetIndex];
+    // 보안 이벤트 발생했다는겨~
+    const isResponding =
+      activeSecurityEvent !== null && activeSecurityEvent.status !== '해결';
+
+    const animateRobot = () => {
+      // 1. 현재 이동할 목적지 결정
+      const target = isResponding
+        ? activeSecurityEvent.position
+        : patrolPath[currentTargetIndex];
 
       const dx = target.x - robot.position.x;
+      const dy = target.y - robot.position.y;
       const dz = target.z - robot.position.z;
 
-      const distance = Math.sqrt(dx * dx + dz * dz);
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-      if (distance < 0.05) {
-        currentTargetIndex = (currentTargetIndex + 1) % patrolPath.length;
+      // 2. 목적지에 도착했는지 확인
+      if (distance < arrivalDistance) {
+        if (isResponding) {
+          if (!hasRespondedRef.current) {
+            hasRespondedRef.current = true;
+            respondSecurityEvent();
+          }
+        } else {
+          currentTargetIndex = (currentTargetIndex + 1) % patrolPath.length;
+        }
 
         return;
       }
 
-      robot.position.x += (dx / distance) * speed;
-      robot.position.z += (dz / distance) * speed;
+      // 3. 목적지 방향으로 조금씩 이동
+      const step = Math.min(speed, distance);
 
+      robot.position.x += (dx / distance) * step;
+      robot.position.y += (dy / distance) * step;
+      robot.position.z += (dz / distance) * step;
+
+      // 4. Zustand에 현재 위치 반영
       updateAgentPosition('robot-01', {
         x: robot.position.x,
         y: robot.position.y,
@@ -445,22 +471,14 @@ export default function DigitalTwinScene() {
       });
     };
 
-    // 사실 로봇 이동도 setInterval 보다는 이 애니메이션 루프 안에서 처리하는게 three.js 스럽다
-    // 즉 이런 구조
-    // requestAnimationFrame
-    //         ↓
-    // 로봇 위치 계산
-    //         ↓
-    // Scene 렌더링
-    // 하지만 지금은 우리가 개념을 배우는 단계니까 일단 setInterval로 구현해보고,
-    // 정상적으로 움직이는 걸 확인한 다음 requestAnimationFrame 기반으로 리팩토링하자.
-    const interval = setInterval(animatePatrol, 16);
+    const interval = setInterval(animateRobot, 16);
 
     return () => {
       clearInterval(interval);
     };
-  }, [updateAgentPosition]);
+  }, [activeSecurityEvent, updateAgentPosition, patrolPath]);
 
+  // 보안 이벤트 상태에 따라 침입자 객체 on/off
   useEffect(() => {
     const scene = sceneRef.current;
 
@@ -495,7 +513,7 @@ export default function DigitalTwinScene() {
 
       strangerObjectsRef.current.clear();
     }
-  }, [strangerOnOff, strangers]);
+  }, [strangerOnOff]);
 
   return (
     <div

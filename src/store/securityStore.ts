@@ -25,6 +25,7 @@ interface SecurityState {
 
   triggerIntrusion: () => void;
   resolveSecurityEvent: () => void;
+  respondSecurityEvent: () => void;
 
   facilityStatuses: Record<string, FacilityStatus>;
 
@@ -161,6 +162,27 @@ export const useSecurityStore = create<SecurityState>((set) => ({
 
     set((state) => ({
       activeSecurityEvent: event,
+
+      facilityStatuses: {
+        ...state.facilityStatuses,
+        'cctv-01': 'danger',
+      },
+
+      agentStatuses: {
+        ...state.agentStatuses,
+        'robot-01': '출동중🟣',
+      },
+    }));
+  },
+
+  respondSecurityEvent: () => {
+    set((state) => ({
+      activeSecurityEvent: state.activeSecurityEvent
+        ? {
+            ...state.activeSecurityEvent,
+            status: '처리중',
+          }
+        : null,
 
       facilityStatuses: {
         ...state.facilityStatuses,

@@ -1,5 +1,6 @@
 import { useSecurityStore } from '../../store/securityStore';
 import { useStrangerStore } from '../../store/strangerStore';
+import { useEffect, useState } from 'react';
 
 // SecurityEventPanel은 이벤트 상태를 직접 보관하지 x
 // Zustand에서 상태를 읽고 액션을 호출하는 역할만 함
@@ -16,6 +17,24 @@ const SecurityEventPanel = () => {
 
   const strangerOn = useStrangerStore((state) => state.strangerOn);
   const strangerOff = useStrangerStore((state) => state.strangerOff);
+
+  const robotStatus = useSecurityStore(
+    (state) => state.agentStatuses['robot-01'],
+  );
+
+  const [canResolve, setCanResolve] = useState(false);
+
+  useEffect(() => {
+    if (robotStatus !== '대응중🟠') {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCanResolve(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [robotStatus]);
 
   return (
     <div className='absolute left-4 top-4 z-10 w-80 rounded-xl border border-white/10 bg-gray-950/90 p-5 text-white shadow-xl backdrop-blur'>
@@ -76,13 +95,24 @@ const SecurityEventPanel = () => {
           </div>
 
           <button
+            disabled={!canResolve}
             onClick={() => {
+              if (!canResolve) return;
+
               resolveSecurityEvent();
               strangerOff();
             }}
-            className='w-full rounded-lg bg-white/10 px-4 py-3 text-sm font-semibold transition hover:bg-white/20'
+            className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition ${
+              canResolve
+                ? 'bg-green-600 text-white hover:bg-green-500'
+                : 'cursor-not-allowed bg-gray-700 text-gray-400'
+            }`}
           >
-            이벤트 해결 처리
+            {!canResolve
+              ? activeSecurityEvent.status === '발생'
+                ? '🟣 출동 중...'
+                : '🟠 대응 중...'
+              : '✓ 이벤트 해결 처리'}
           </button>
         </div>
       )}
