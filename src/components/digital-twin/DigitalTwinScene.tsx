@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
   facilities,
   securityAgents,
+  strangers,
+  type Stranger,
   type FacilityStatus,
   type SecurityAgent,
 } from '../../data/mockData';
@@ -79,6 +81,31 @@ export default function DigitalTwinScene() {
           : agentType === 'patrol-robot'
             ? 0x8b5cf6
             : 0x06b6d4,
+    });
+
+    return new THREE.Mesh(geometry, material);
+  };
+
+  const createStrangerMesh = (strangerType: Stranger['type']) => {
+    let geometry: THREE.BufferGeometry;
+
+    switch (strangerType) {
+      case 'stranger':
+        geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 5);
+        break;
+
+      case 'animal':
+        geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 5);
+        break;
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      color:
+        strangerType === 'stranger'
+          ? 0x000000
+          : strangerType === 'animal'
+            ? 0xffffff
+            : 0xffc0cb,
     });
 
     return new THREE.Mesh(geometry, material);
@@ -220,6 +247,23 @@ export default function DigitalTwinScene() {
       scene.add(mesh);
 
       agentObjectsRef.current.set(agent.id, mesh);
+    });
+
+    // 침입자 객체 씬에 추가
+    strangers.forEach((stranger) => {
+      const mesh = createStrangerMesh(stranger.type);
+
+      mesh.position.set(
+        stranger.position.x,
+        stranger.position.y,
+        stranger.position.z,
+      );
+
+      mesh.userData.stranger = stranger.id;
+
+      scene.add(mesh);
+
+      agentObjectsRef.current.set(stranger.id, mesh);
     });
 
     //useSecurityStore의 시설 선택 함수

@@ -1,6 +1,7 @@
 export type FacilityStatus = 'normal' | 'warning' | 'danger';
 export type FacilityType = 'building' | 'cctv' | 'gate' | 'guard-post';
 export type AgentType = 'guard' | 'patrol-robot' | 'drone';
+export type StrangerType = 'stranger' | 'animal';
 // 이것도 사실 위에 처럼 영어 text로만 하고 클라이언트 쪽에서 맵핑해서 뱃지ui 형태로 만드는게 좋긴함
 // 하지만 일단 이렇게 그냥 ㄱㄱ
 export type AgentStatus =
@@ -37,6 +38,29 @@ export interface SecurityAgent {
     z: number;
   };
 }
+
+// 침입자 객체 데이터
+export interface Stranger {
+  id: string;
+  type: StrangerType;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+}
+
+export const strangers: Stranger[] = [
+  {
+    id: 'stranger-01',
+    type: 'stranger',
+    position: {
+      x: 0,
+      y: 0.3,
+      z: 5,
+    },
+  },
+];
 
 export interface SecurityEvent {
   id: string;
