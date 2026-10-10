@@ -359,38 +359,75 @@ export default function DigitalTwinScene() {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    // const handleClick = (event: MouseEvent) => {
+    //   if (!containerRef.current) return;
+
+    //   const rect = containerRef.current.getBoundingClientRect();
+
+    //   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+    //   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    //   // 카메라와 마우스 좌표를 기반으로 ray 설정
+    //   raycaster.setFromCamera(mouse, camera);
+
+    //   // intersects 대상 배열 전달 (scene.children 등)
+    //   // 한마디로 클릭 이벤트인거지 three.js 의~
+    //   const intersects = raycaster.intersectObjects(scene.children);
+
+    //   // 가장 처음에 닿은 객체에 접근(클릭 시 발동)
+    //   if (intersects.length === 0) return;
+
+    //   const selectedObject = intersects[0].object;
+
+    //   console.log(selectedObject.userData);
+
+    //   // 경비 객체 클릭
+    //   if (selectedObject.userData.agentId) {
+    //     selectAgent(selectedObject.userData.agentId);
+    //     return;
+    //   }
+
+    //   // 시설 클릭
+    //   if (selectedObject.userData.facilityId) {
+    //     selectFacility(selectedObject.userData.facilityId);
+    //   }
+    // };
+
     const handleClick = (event: MouseEvent) => {
       if (!containerRef.current) return;
 
       const rect = containerRef.current.getBoundingClientRect();
 
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // 카메라와 마우스 좌표를 기반으로 ray 설정
       raycaster.setFromCamera(mouse, camera);
 
-      // intersects 대상 배열 전달 (scene.children 등)
-      // 한마디로 클릭 이벤트인거지 three.js 의~
-      const intersects = raycaster.intersectObjects(scene.children);
+      // true: 하위 객체까지 재귀적으로 탐색
+      const intersects = raycaster.intersectObjects(scene.children, true);
 
-      // 가장 처음에 닿은 객체에 접근(클릭 시 발동)
       if (intersects.length === 0) return;
 
-      const selectedObject = intersects[0].object;
+      // 가장 가까운 교차 객체부터 부모 방향으로 탐색
+      let selectedObject: THREE.Object3D | null = intersects[0].object;
 
-      console.log(selectedObject.userData);
+      while (selectedObject) {
+        const { agentId, facilityId } = selectedObject.userData;
 
-      // 경비 객체 클릭
-      if (selectedObject.userData.agentId) {
-        selectAgent(selectedObject.userData.agentId);
-        return;
-      }
+        // 경비 객체 클릭
+        if (agentId) {
+          selectAgent(agentId);
+          return;
+        }
 
-      // 시설 클릭
-      if (selectedObject.userData.facilityId) {
-        selectFacility(selectedObject.userData.facilityId);
+        // 시설 클릭
+        if (facilityId) {
+          selectFacility(facilityId);
+          return;
+        }
+
+        selectedObject = selectedObject.parent;
       }
     };
 
@@ -466,13 +503,13 @@ export default function DigitalTwinScene() {
                 ringScale = 3;
                 break;
               case 'gate':
-                ringScale = 1.3;
+                ringScale = 1.2;
                 break;
               case 'guard-post':
-                ringScale = 0.8;
+                ringScale = 1.2;
                 break;
               case 'cctv':
-                ringScale = 0.8;
+                ringScale = 0.5;
                 break;
             }
           } else if (selectedAgentId) {
@@ -482,10 +519,10 @@ export default function DigitalTwinScene() {
 
             switch (agent?.type) {
               case 'guard':
-                ringScale = 0.8;
+                ringScale = 0.4;
                 break;
               case 'patrol-robot':
-                ringScale = 0.9;
+                ringScale = 0.6;
                 break;
               case 'drone':
                 ringScale = 0.8;
