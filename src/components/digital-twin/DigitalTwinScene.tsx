@@ -214,7 +214,7 @@ export default function DigitalTwinScene() {
     // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
       // 본관 GLB 모델 로드
-      if (facility.id === 'main-building') {
+      if (facility.id === 'building-01') {
         const loader = new GLTFLoader();
 
         loader.load(
@@ -233,7 +233,7 @@ export default function DigitalTwinScene() {
             };
 
             // 본관 스케일 조정 필요할때 주석 풀기
-            // object.scale.set(1, 1, 1);
+            object.scale.set(2, 1.8, 5);
 
             facilityObjectsRef.current.set(facility.id, object);
             scene.add(object);

@@ -84,7 +84,7 @@ export const facilities: Facility[] = [
     status: 'normal',
     position: {
       x: 0,
-      y: 1,
+      y: 0,
       z: 0,
     },
   },
@@ -95,7 +95,7 @@ export const facilities: Facility[] = [
     status: 'normal',
     position: {
       x: 2.3,
-      y: 1.6,
+      y: 2,
       z: 2.3,
     },
   },
@@ -106,7 +106,7 @@ export const facilities: Facility[] = [
     status: 'normal',
     position: {
       x: -2.3,
-      y: 1.6,
+      y: 2,
       z: -2.3,
     },
   },
