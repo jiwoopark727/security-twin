@@ -446,8 +446,8 @@ export default function DigitalTwinScene() {
       if (distance < arrivalDistance) {
         if (isResponding) {
           if (!hasRespondedRef.current) {
-            hasRespondedRef.current = true;
             respondSecurityEvent();
+            hasRespondedRef.current = true;
           }
         } else {
           currentTargetIndex = (currentTargetIndex + 1) % patrolPath.length;
@@ -475,8 +475,15 @@ export default function DigitalTwinScene() {
 
     return () => {
       clearInterval(interval);
+      //침임 이벤트 발생 버튼을 여러번 누를수도 있기에 hasRespondRef false로 초기화해줘야됨
+      hasRespondedRef.current = false;
     };
-  }, [activeSecurityEvent, updateAgentPosition, patrolPath]);
+  }, [
+    activeSecurityEvent,
+    updateAgentPosition,
+    patrolPath,
+    respondSecurityEvent,
+  ]);
 
   // 보안 이벤트 상태에 따라 침입자 객체 on/off
   useEffect(() => {

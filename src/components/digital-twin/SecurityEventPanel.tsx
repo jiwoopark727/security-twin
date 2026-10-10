@@ -31,7 +31,7 @@ const SecurityEventPanel = () => {
 
     const timer = setTimeout(() => {
       setCanResolve(true);
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [robotStatus]);
@@ -101,6 +101,7 @@ const SecurityEventPanel = () => {
 
               resolveSecurityEvent();
               strangerOff();
+              setCanResolve(false);
             }}
             className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition ${
               canResolve
