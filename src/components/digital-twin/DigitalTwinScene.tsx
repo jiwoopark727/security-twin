@@ -11,6 +11,12 @@ import {
 } from '../../data/mockData';
 import { useSecurityStore } from '../../store/securityStore';
 import { useStrangerStore } from '../../store/strangerStore';
+const PATROL_PATH = [
+  { x: 3, y: 0.2, z: -3 },
+  { x: 3, y: 0.2, z: 3 },
+  { x: -3, y: 0.2, z: 3 },
+  { x: -3, y: 0.2, z: -3 },
+] as const;
 
 export default function DigitalTwinScene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,19 +38,13 @@ export default function DigitalTwinScene() {
 
   const strangerOnOff = useStrangerStore((state) => state.strangerOnOff);
 
-  const selectedFacilityId = useSecurityStore(
-    (state) => state.selectedFacilityId,
-  );
-
-  const selectedAgentId = useSecurityStore((state) => state.selectedAgentId);
-
-  // 로봇 순찰 경로 지정(본관 주위 한바퀴로)
-  const patrolPath = [
-    { x: 3, y: 0.2, z: -3 },
-    { x: 3, y: 0.2, z: 3 },
-    { x: -3, y: 0.2, z: 3 },
-    { x: -3, y: 0.2, z: -3 },
-  ];
+  // // 로봇 순찰 경로 지정(본관 주위 한바퀴로)
+  // const patrolPath = [
+  //   { x: 3, y: 0.2, z: -3 },
+  //   { x: 3, y: 0.2, z: 3 },
+  //   { x: -3, y: 0.2, z: 3 },
+  //   { x: -3, y: 0.2, z: -3 },
+  // ];
 
   // useRef를 쓰는 이유는 리렌더링을 유발하지 않으면서 데이터와
   // 객체 인스턴슬를 유지하고 직접 조작하기 위함 useState면 계속 리렌더링 되니까
@@ -277,25 +277,25 @@ export default function DigitalTwinScene() {
     const selectAgent = useSecurityStore.getState().selectAgent;
 
     // 이거 다시 주석 지울 때 밑에 clean(Interval) 도 잊지말고 주석 빼줘야함!!
-    // // 시설 상태 변경 함수
-    // const updateStatus = useSecurityStore.getState().updateFacilityStatus;
+    // 시설 상태 변경 함수
+    const updateStatus = useSecurityStore.getState().updateFacilityStatus;
 
-    // const statusList: FacilityStatus[] = ['normal', 'warning', 'danger'];
+    const statusList: FacilityStatus[] = ['normal', 'warning', 'danger'];
 
-    // // 시설 상태 10초마다 랜덤 변경(시설도 랜덤 상태도 랜덤)
-    // const interval = setInterval(() => {
-    //   const randomFacility =
-    //     facilities[Math.floor(Math.random() * facilities.length)];
+    // 시설 상태 10초마다 랜덤 변경(시설도 랜덤 상태도 랜덤)
+    const interval = setInterval(() => {
+      const randomFacility =
+        facilities[Math.floor(Math.random() * facilities.length)];
 
-    //   const randomStatus =
-    //     statusList[Math.floor(Math.random() * statusList.length)];
+      const randomStatus =
+        statusList[Math.floor(Math.random() * statusList.length)];
 
-    //   updateStatus(randomFacility.id, randomStatus);
+      updateStatus(randomFacility.id, randomStatus);
 
-    //   console.log(
-    //     `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
-    //   );
-    // }, 10000);
+      console.log(
+        `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
+      );
+    }, 10000);
 
     // Raycaster 설정
     const raycaster = new THREE.Raycaster();
@@ -411,7 +411,7 @@ export default function DigitalTwinScene() {
                 ringScale = 1.3;
                 break;
               case 'guard-post':
-                ringScale = 1;
+                ringScale = 0.8;
                 break;
               case 'cctv':
                 ringScale = 0.8;
@@ -479,7 +479,7 @@ export default function DigitalTwinScene() {
 
       renderer.domElement.removeEventListener('click', handleClick);
 
-      // clearInterval(interval);
+      clearInterval(interval);
     };
   }, []);
 
@@ -519,13 +519,12 @@ export default function DigitalTwinScene() {
   );
 
   const hasRespondedRef = useRef(false);
+  const patrolTargetIndexRef = useRef(1);
 
   useEffect(() => {
     const robot = agentObjectsRef.current.get('robot-01');
 
     if (!robot) return;
-
-    let currentTargetIndex = 1;
 
     const speed = 0.02;
     const arrivalDistance = 0.05;
@@ -538,7 +537,7 @@ export default function DigitalTwinScene() {
       // 1. 현재 이동할 목적지 결정
       const target = isResponding
         ? activeSecurityEvent.position
-        : patrolPath[currentTargetIndex];
+        : PATROL_PATH[patrolTargetIndexRef.current];
 
       const dx = target.x - robot.position.x;
       const dy = target.y - robot.position.y;
@@ -556,7 +555,8 @@ export default function DigitalTwinScene() {
             hasRespondedRef.current = true;
           }
         } else {
-          currentTargetIndex = (currentTargetIndex + 1) % patrolPath.length;
+          patrolTargetIndexRef.current =
+            (patrolTargetIndexRef.current + 1) % PATROL_PATH.length;
         }
 
         return;
@@ -584,12 +584,7 @@ export default function DigitalTwinScene() {
       //침임 이벤트 발생 버튼을 여러번 누를수도 있기에 hasRespondRef false로 초기화해줘야됨
       hasRespondedRef.current = false;
     };
-  }, [
-    activeSecurityEvent,
-    updateAgentPosition,
-    patrolPath,
-    respondSecurityEvent,
-  ]);
+  }, [activeSecurityEvent, updateAgentPosition, respondSecurityEvent]);
 
   // 보안 이벤트 상태에 따라 침입자 객체 on/off
   useEffect(() => {
