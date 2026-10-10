@@ -53,7 +53,7 @@ export default function DigitalTwinScene() {
   // useRef를 쓰는 이유는 리렌더링을 유발하지 않으면서 데이터와
   // 객체 인스턴슬를 유지하고 직접 조작하기 위함 useState면 계속 리렌더링 되니까
   // 시설객체저장
-  const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
+  const facilityObjectsRef = useRef<Map<string, THREE.Object3D>>(new Map());
 
   // 경비객체 저장(glb 파일로 바꾸기 위해 mesh를 Object3D로 바꿈ㅎ)
   const agentObjectsRef = useRef(new Map<string, THREE.Object3D>());
@@ -213,6 +213,74 @@ export default function DigitalTwinScene() {
 
     // 시설 데이터와 3D Object 들을 연결
     facilities.forEach((facility) => {
+      // 본관 GLB 모델 로드
+      if (facility.id === 'main-building') {
+        const loader = new GLTFLoader();
+
+        loader.load(
+          '/models/building-01.glb',
+          (gltf) => {
+            const object = gltf.scene;
+
+            object.position.set(
+              facility.position.x,
+              facility.position.y,
+              facility.position.z,
+            );
+
+            object.userData = {
+              facilityId: facility.id,
+            };
+
+            // 본관 스케일 조정 필요할때 주석 풀기
+            // object.scale.set(1, 1, 1);
+
+            facilityObjectsRef.current.set(facility.id, object);
+            scene.add(object);
+          },
+          undefined,
+          (error) => {
+            console.error('본관 GLB 모델 로드 실패:', error);
+          },
+        );
+
+        return;
+      }
+
+      // 기존 정문 GLB 모델 로드
+      if (facility.type === 'gate') {
+        const loader = new GLTFLoader();
+
+        loader.load(
+          '/models/gate-01.glb',
+          (gltf) => {
+            const object = gltf.scene;
+
+            object.position.set(
+              facility.position.x,
+              facility.position.y,
+              facility.position.z,
+            );
+
+            object.userData = {
+              facilityId: facility.id,
+            };
+
+            object.scale.set(2, 1, 2);
+
+            facilityObjectsRef.current.set(facility.id, object);
+            scene.add(object);
+          },
+          undefined,
+          (error) => {
+            console.error('정문 GLB 모델 로드 실패:', error);
+          },
+        );
+
+        return;
+      }
+
+      // 아래는 기존 시설물 생성 코드 유지
       let geometry: THREE.BufferGeometry;
       let material: THREE.Material;
 
@@ -226,13 +294,6 @@ export default function DigitalTwinScene() {
 
         case 'cctv':
           geometry = new THREE.CylinderGeometry(0.25, 0.25, 0.6, 16);
-          material = new THREE.MeshStandardMaterial({
-            color: getStatusColor(facility.status),
-          });
-          break;
-
-        case 'gate':
-          geometry = new THREE.BoxGeometry(3, 1, 0.5);
           material = new THREE.MeshStandardMaterial({
             color: getStatusColor(facility.status),
           });
@@ -265,7 +326,6 @@ export default function DigitalTwinScene() {
       };
 
       facilityObjectsRef.current.set(facility.id, object);
-
       scene.add(object);
     });
 
@@ -578,18 +638,26 @@ export default function DigitalTwinScene() {
     };
   }, []);
 
-  // 상태가 변경될때마다 시설 객체 색상 변경해주는
+  // 상태가 변경될 때마다 시설 객체 색상 변경
   useEffect(() => {
     Object.entries(facilityStatuses).forEach(([facilityId, status]) => {
       const object = facilityObjectsRef.current.get(facilityId);
 
       if (!object) return;
 
-      const material = object.material;
+      object.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
 
-      if (material instanceof THREE.MeshStandardMaterial) {
-        material.color.setHex(getStatusColor(status));
-      }
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+
+        materials.forEach((material) => {
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.color.setHex(getStatusColor(status));
+          }
+        });
+      });
     });
   }, [facilityStatuses]);
 
