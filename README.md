@@ -87,6 +87,37 @@ Three.js의 `Raycaster`를 활용해 마우스로 클릭한 3D 객체를 판별�
 
 `GLTFLoader`를 사용해 모델을 비동기적으로 로딩하고, 로딩된 객체를 기존 객체 참조 맵에 등록해 이동·선택·상태 관리 기능을 유지했습니다.
 
+## 동작 화면 스크린샷
+
+<table>
+  <tr>
+    <td align="center">
+      <p><홈(초기) 화면></p>
+      <img src="https://raw.githubusercontent.com/jiwoopark727/security-twin/main/public/screenshot/11.png" height="500" alt="순찰 로봇 선택 화면">
+    </td>
+    <td align="center">
+      <p><재료 화면></p>
+      <img src="https://raw.githubusercontent.com/jiwoopark727/security-twin/main/public/screenshot/22.png" height="500" alt="침임 이벤트 대응 화면">
+    </td>
+    <td align="center">
+      <p><레시피 리스트 화면></p>
+      <img src="https://raw.githubusercontent.com/jiwoopark727/security-twin/main/public/screenshot/33.png" height="500" alt="이벤트 해결 처리 완료 화면">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <p><레시피 디테일 화면></p>
+      <img src="https://raw.githubusercontent.com/jiwoopark727/security-twin/main/public/screenshot/44.png" height="500" alt="본관 빌딩 선택 화면">
+    </td>
+    <td align="center">
+      <p><레시피 디테일2 화면></p>
+      <img src="https://raw.githubusercontent.com/jiwoopark727/security-twin/main/public/screenshot/55.png" height="500" alt="경비 초소 선택 화면">
+    </td>
+  </tr>
+</table>
+
+<br/>
+
 ## 5. 개발 중 발생한 문제와 해결 과정
 
 ### 5-1. 선택 상태가 변경되어도 바닥 링이 갱신되지 않는 문제
