@@ -153,7 +153,7 @@ export const securityAgents: SecurityAgent[] = [
     status: '순찰중🔵',
     position: {
       x: 3,
-      y: 0.2,
+      y: 0.65,
       z: -3,
     },
   },

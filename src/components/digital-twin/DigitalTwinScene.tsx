@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
@@ -11,14 +11,18 @@ import {
 } from '../../data/mockData';
 import { useSecurityStore } from '../../store/securityStore';
 import { useStrangerStore } from '../../store/strangerStore';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 const PATROL_PATH = [
-  { x: 3, y: 0.2, z: -3 },
-  { x: 3, y: 0.2, z: 3 },
-  { x: -3, y: 0.2, z: 3 },
-  { x: -3, y: 0.2, z: -3 },
+  { x: 3, y: 0.65, z: -3 },
+  { x: 3, y: 0.65, z: 3 },
+  { x: -3, y: 0.65, z: 3 },
+  { x: -3, y: 0.65, z: -3 },
 ] as const;
 
 export default function DigitalTwinScene() {
+  // 순찰로봇 glb 모델 로딩 완료 체크를 위해
+  const [agentsReady, setAgentsReady] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Zustand의 시설 상태 변경 함수 가져옴
@@ -50,10 +54,13 @@ export default function DigitalTwinScene() {
   // 객체 인스턴슬를 유지하고 직접 조작하기 위함 useState면 계속 리렌더링 되니까
   // 시설객체저장
   const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
-  // 경비객체저장
-  const agentObjectsRef = useRef(new Map<string, THREE.Mesh>());
+
+  // 경비객체 저장(glb 파일로 바꾸기 위해 mesh를 Object3D로 바꿈ㅎ)
+  const agentObjectsRef = useRef(new Map<string, THREE.Object3D>());
+
   // 침입자객체
   const strangerObjectsRef = useRef<Map<string, THREE.Mesh>>(new Map());
+
   // 선택 표시용 링 객체
   const selectionIndicatorRef = useRef<THREE.Mesh | null>(null);
 
@@ -83,22 +90,26 @@ export default function DigitalTwinScene() {
         geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 5);
         break;
 
-      case 'patrol-robot':
-        geometry = new THREE.BoxGeometry(0.8, 0.4, 0.8);
-        break;
-
       case 'drone':
         geometry = new THREE.SphereGeometry(0.4, 16, 16);
         break;
+
+      case 'patrol-robot':
+        // geometry = new THREE.BoxGeometry(0.8, 0.4, 0.8);
+        // break;
+        return null;
     }
 
+    // const material = new THREE.MeshStandardMaterial({
+    //   color:
+    //     agentType === 'guard'
+    //       ? 0x3b82f6
+    //       : agentType === 'patrol-robot'
+    //         ? 0x8b5cf6
+    //         : 0xff00ff,
+    // });
     const material = new THREE.MeshStandardMaterial({
-      color:
-        agentType === 'guard'
-          ? 0x3b82f6
-          : agentType === 'patrol-robot'
-            ? 0x8b5cf6
-            : 0xfffa500,
+      color: agentType === 'guard' ? 0x3b82f6 : 0xff00ff,
     });
 
     return new THREE.Mesh(geometry, material);
@@ -152,7 +163,7 @@ export default function DigitalTwinScene() {
     );
 
     // 카메라가 바라보는 위치 설정
-    camera.position.set(3, 6, 8);
+    camera.position.set(3, 6, 6);
 
     // 3. Renderer(Scene과 Camera의 객체 데이터를 넘겨받아 카메라가 비추는 3D 공간을 2차원
     // 평면 이미지로 그려서 웹페이지 HTML <canvas> 요소에 출력하는 핵심 객체
@@ -188,7 +199,7 @@ export default function DigitalTwinScene() {
 
     //바닥 재질, 모양, 색상 이런거
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x374151,
+      color: 0x777777,
     });
 
     // 실제로 화면에 보이는 3D 객체는 보통 Geometry + Meterial = Mesh
@@ -258,9 +269,58 @@ export default function DigitalTwinScene() {
       scene.add(object);
     });
 
+    // // 경비 객체 씬에 추가
+    // securityAgents.forEach((agent) => {
+    //   const mesh = createAgentMesh(agent.type);
+
+    //   mesh.position.set(agent.position.x, agent.position.y, agent.position.z);
+
+    //   mesh.userData.agentId = agent.id;
+
+    //   scene.add(mesh);
+
+    //   agentObjectsRef.current.set(agent.id, mesh);
+    // });
+
     // 경비 객체 씬에 추가
     securityAgents.forEach((agent) => {
+      // 순찰로봇이면~ glb 파일로 로드 하겠다는거지
+      if (agent.type === 'patrol-robot') {
+        const loader = new GLTFLoader();
+
+        loader.load(
+          '/models/patrol-robot.glb',
+          (gltf) => {
+            const model = gltf.scene;
+
+            model.position.set(
+              agent.position.x,
+              agent.position.y,
+              agent.position.z,
+            );
+
+            model.scale.setScalar(1);
+
+            model.userData.agentId = agent.id;
+
+            scene.add(model);
+
+            agentObjectsRef.current.set(agent.id, model);
+
+            setAgentsReady(true);
+          },
+          undefined,
+          (error) => {
+            console.error('순찰 로봇 모델 로딩 실패:', error);
+          },
+        );
+
+        return;
+      }
+
       const mesh = createAgentMesh(agent.type);
+
+      if (!mesh) return;
 
       mesh.position.set(agent.position.x, agent.position.y, agent.position.z);
 
@@ -292,9 +352,7 @@ export default function DigitalTwinScene() {
 
       updateStatus(randomFacility.id, randomStatus);
 
-      console.log(
-        `[센서 데이터] ${randomFacility.name}: ${statusLabel[randomStatus]}`,
-      );
+      console.log(`[센서 데이터] ${randomFacility.name}: ${randomStatus}`);
     }, 10000);
 
     // Raycaster 설정
@@ -584,7 +642,12 @@ export default function DigitalTwinScene() {
       //침임 이벤트 발생 버튼을 여러번 누를수도 있기에 hasRespondRef false로 초기화해줘야됨
       hasRespondedRef.current = false;
     };
-  }, [activeSecurityEvent, updateAgentPosition, respondSecurityEvent]);
+  }, [
+    activeSecurityEvent,
+    updateAgentPosition,
+    respondSecurityEvent,
+    agentsReady,
+  ]);
 
   // 보안 이벤트 상태에 따라 침입자 객체 on/off
   useEffect(() => {
