@@ -32,6 +32,12 @@ export default function DigitalTwinScene() {
 
   const strangerOnOff = useStrangerStore((state) => state.strangerOnOff);
 
+  const selectedFacilityId = useSecurityStore(
+    (state) => state.selectedFacilityId,
+  );
+
+  const selectedAgentId = useSecurityStore((state) => state.selectedAgentId);
+
   // 로봇 순찰 경로 지정(본관 주위 한바퀴로)
   const patrolPath = [
     { x: 3, y: 0.2, z: -3 },
@@ -46,7 +52,10 @@ export default function DigitalTwinScene() {
   const facilityObjectsRef = useRef(new Map<string, THREE.Mesh>());
   // 경비객체저장
   const agentObjectsRef = useRef(new Map<string, THREE.Mesh>());
+  // 침입자객체
   const strangerObjectsRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  // 선택 표시용 링 객체
+  const selectionIndicatorRef = useRef<THREE.Mesh | null>(null);
 
   // 시설 종류에 따른 기본 색상과 상태에 따른 색상을 분리
   // store에 데이터가 있고 three.js가 이 데이터를 받아서 3d 객체 색상 표현
@@ -89,7 +98,7 @@ export default function DigitalTwinScene() {
           ? 0x3b82f6
           : agentType === 'patrol-robot'
             ? 0x8b5cf6
-            : 0x06b6d4,
+            : 0xfffa500,
     });
 
     return new THREE.Mesh(geometry, material);
@@ -330,6 +339,31 @@ export default function DigitalTwinScene() {
     //시설 객체 클릭 시 이벤트 등록
     renderer.domElement.addEventListener('click', handleClick);
 
+    // 선택된 객체를 표시할 링 객체
+    const selectionGeometry = new THREE.RingGeometry(1.05, 1.2, 48);
+
+    const selectionMaterial = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    const selectionIndicator = new THREE.Mesh(
+      selectionGeometry,
+      selectionMaterial,
+    );
+
+    // RingGeometry는 기본적으로 XY 평면이므로 바닥에 눕힌다.
+    selectionIndicator.rotation.x = -Math.PI / 2;
+    selectionIndicator.position.y = 0.04;
+    selectionIndicator.visible = false;
+    selectionIndicator.renderOrder = 1;
+
+    scene.add(selectionIndicator);
+    selectionIndicatorRef.current = selectionIndicator;
+
     // 7. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -339,6 +373,73 @@ export default function DigitalTwinScene() {
       requestAnimationFrame(animate);
 
       controls.update();
+
+      // 선택한 시설이나 경비 객체 위치를 읽고 해당 객체 아래에 링을 이동
+      const indicator = selectionIndicatorRef.current;
+
+      if (indicator) {
+        const { selectedFacilityId, selectedAgentId } =
+          useSecurityStore.getState();
+
+        const selectedObject = selectedFacilityId
+          ? facilityObjectsRef.current.get(selectedFacilityId)
+          : selectedAgentId
+            ? agentObjectsRef.current.get(selectedAgentId)
+            : undefined;
+
+        if (selectedObject) {
+          indicator.visible = true;
+
+          // 선택한 객체의 X, Z 위치를 따라간다.
+          indicator.position.x = selectedObject.position.x;
+          indicator.position.z = selectedObject.position.z;
+          indicator.position.y = 0.04;
+
+          // 객체 종류에 따라 링 크기를 조정한다.
+          let ringScale = 0.7;
+
+          if (selectedFacilityId) {
+            const facility = facilities.find(
+              (item) => item.id === selectedFacilityId,
+            );
+
+            switch (facility?.type) {
+              case 'building':
+                ringScale = 3;
+                break;
+              case 'gate':
+                ringScale = 1.3;
+                break;
+              case 'guard-post':
+                ringScale = 1;
+                break;
+              case 'cctv':
+                ringScale = 0.8;
+                break;
+            }
+          } else if (selectedAgentId) {
+            const agent = securityAgents.find(
+              (item) => item.id === selectedAgentId,
+            );
+
+            switch (agent?.type) {
+              case 'guard':
+                ringScale = 0.8;
+                break;
+              case 'patrol-robot':
+                ringScale = 0.9;
+                break;
+              case 'drone':
+                ringScale = 0.8;
+                break;
+            }
+          }
+
+          indicator.scale.setScalar(ringScale);
+        } else {
+          indicator.visible = false;
+        }
+      }
 
       renderer.render(scene, camera);
     };
@@ -368,6 +469,9 @@ export default function DigitalTwinScene() {
       // 불필요한 리소스 점유 발생 방지 Clean up
       controls.dispose();
       renderer.dispose();
+      selectionGeometry.dispose();
+      selectionMaterial.dispose();
+      selectionIndicatorRef.current = null;
 
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
@@ -443,7 +547,9 @@ export default function DigitalTwinScene() {
       const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
       // 2. 목적지에 도착했는지 확인
-      if (distance < arrivalDistance) {
+      // 0.03을 더한 이유는 한 프레임의 0.02의 속도로 이동하는데
+      // z=5의 위치에 안착하려면 ㅎㅎ
+      if (distance + 0.03 < arrivalDistance) {
         if (isResponding) {
           if (!hasRespondedRef.current) {
             respondSecurityEvent();
